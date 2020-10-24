@@ -1,20 +1,15 @@
 --[[
 
-Created By: Mystifine and EDmaster24
+    Rex.lua
+
+    The Rex framework is a lightweight service-oriented framework inspired by knit.
+    Designed for beginners, this framework aims to abstract away communications via
+    remote events, allowing for cleaner and more streamlined code.
+
+    Project Managed By: Mystifine and EDmaster24
+    Contributors: Owen Bartolf (daftcube)
 
 ]]
-
---|| Localise
-local Ipairs = ipairs
-local Script = script
-local Require = require
-local Setmetatable = setmetatable
-local Pcall = pcall
-local Next = next
-local Type = typeof
-local Clock = os.clock
-local Split = string.split
-local Unpack = unpack
 
 --|| Services ||--
 local RunService = game:GetService("RunService")
@@ -25,13 +20,13 @@ local ServerStorage = game.ServerStorage
 local Server = RunService:IsServer()
 local Client = RunService:IsClient()
 
-local ReplicatorFunction = Script.RemoteFunctions.ReplicatorFunction
-local ReplicatorEvent = Script.RemoteEvents.ReplicatorEvent
+local ReplicatorFunction = script.RemoteFunctions.ReplicatorFunction
+local ReplicatorEvent = script.RemoteEvents.ReplicatorEvent
 
 --|| Modules ||--
 local Rex = {}
 local CachedLibraries = {}
-local Configurations = Require(Script.Data.Configurations)
+local Configurations = require(script.Data.Configurations)
 
 --| Functions For Autofill from other scripts .-. they will get over written by unpack
 -- SERVICES
@@ -47,7 +42,7 @@ function Rex:GetClass() end
 function Rex:GetClassesClientCallbacks() end
 function Rex:GetAllClasses() end
 
--- DATABAASES
+-- DATABASES
 function Rex:CreateDatabase() end
 function Rex:GetDatabase() end
 function Rex:GetAllDatabases() end
@@ -58,22 +53,22 @@ function Rex:ReplicateDatabase() end
 
 --|| Private Functions
 local function UnpackLibrary(Library)
-	CachedLibraries[Library.Name] = Require(Library)	
-	for Index, Function in Next, CachedLibraries[Library.Name] do
-		if Type(Function) == "function" then
+	CachedLibraries[Library.Name] = require(Library)	
+	for Index, Function in next, CachedLibraries[Library.Name] do
+		if typeof(Function) == "function" then
 			Rex[Index] = Function
 		end
 	end
 end
 
 local function UnpackGlobals()
-	for _, Module in Ipairs(Script.Globals:GetChildren()) do
-		Rex[Module.Name] = Require(Module)
+	for _, Module in ipairs(script.Globals:GetChildren()) do
+		Rex[Module.Name] = require(Module)
 	end
 end
 
 local function WaitUntilLoaded()
-	local Loaded = Server and Script.Data.ServerLoaded or Script.Data.ClientLoaded
+	local Loaded = Server and script.Data.ServerLoaded or script.Data.ClientLoaded
 	-- This will wait until Loaded is true
 	while not Loaded.Value do
 		RunService.Stepped:Wait()
@@ -82,7 +77,7 @@ end
 
 UnpackGlobals()
 --| Unpack them libraries!
-for _, Library in Ipairs(Script.Libraries:GetChildren()) do
+for _, Library in ipairs(script.Libraries:GetChildren()) do
 	UnpackLibrary(Library)
 	Rex.Print(Library.Name.." has been successfully loaded!")	
 end
@@ -95,11 +90,11 @@ end
 function Rex:Start()
 	if Server then
 		--Rex:ReplicateDatabase()
-		Script.Data.ServerLoaded.Value = true
-		Rex.Print("Rex has been started :3 on the server UWU")
+		script.Data.ServerLoaded.Value = true
+		Rex.Print("[Rex - Server] Rex initialized.")
 	elseif Client then
-		Script.Data.ClientLoaded.Value = true
-		Rex.Print("Rex has been started UWU on the client :3")
+		script.Data.ClientLoaded.Value = true
+		Rex.Print("[Rex - Client] Rex initialized.")
 	end
 end
 
@@ -117,8 +112,8 @@ if Server then
 		
 		local function CompactFunctions(Id, Data)
 			local Functions = {}
-			for FunctionName, _ in Next, Data do
-				local Remote = Script.RemoteFunctions:FindFirstChild(Id.."."..FunctionName)
+			for FunctionName, _ in next, Data do
+				local Remote = script.RemoteFunctions:FindFirstChild(Id.."."..FunctionName)
 				Functions[FunctionName] = Remote
 			end
 			return Functions
@@ -126,24 +121,24 @@ if Server then
 		
 		--| Compact Services
 		local Services = Rex:GetServicesClientCallbacks()
-		for ServiceId, Functions in Next, Services do
-			if not Script.Services:FindFirstChild(ServiceId) then
+		for ServiceId, Functions in next, Services do
+			if not script.Services:FindFirstChild(ServiceId) then
 				CompactedData.Services[ServiceId] = CompactFunctions(ServiceId, Functions)
 			end
 		end
 		
 		--| Compact Databases
 		local Databases = Rex:GetAllDatabases()
-		for Database, Data in Next, Databases do
-			if not Script.Databases:FindFirstChild(Database) then
+		for Database, Data in next, Databases do
+			if not script.Databases:FindFirstChild(Database) then
 				CompactedData.Databases[Database] = Data
 			end
 		end
 		
 		--| Compact Classes
 		local Classes = Rex:GetClassesClientCallbacks()
-		for Class, Functions in Next, Classes do
-			if not Script.Classes:FindFirstChild(Class) then
+		for Class, Functions in next, Classes do
+			if not script.Classes:FindFirstChild(Class) then
 				CompactedData.Classes[Class] = CompactFunctions(Class, Functions)
 			end
 		end
@@ -159,7 +154,7 @@ if Server then
 	
 	coroutine.resume(coroutine.create(function()
 		wait(30)
-		if not Script.Data.ServerLoaded.Value then
+		if not script.Data.ServerLoaded.Value then
 			Rex.Warn("\nDid you forget to call Rex:Start() on the SERVER? It's been 30 seconds.\nDid you forget to call Rex:Start()? It's been 30 seconds\nDid you forget to call Rex:Start()? It's been 30 seconds.\nDid you forget to call Rex:Start()? It's been 30 seconds.\nDid you forget to call Rex:Start()? It's been 30 seconds.\nDid you forget to call Rex:Start()? It's been 30 seconds.")
 		end
 	end))
@@ -169,7 +164,7 @@ elseif Client then
 	
 	local function CompactFunctions(Data)
 		local Functions = {}
-		for FunctionIndex, Remote in Next, Data do
+		for FunctionIndex, Remote in next, Data do
 			Functions[FunctionIndex] = function(...)
 				return Remote:InvokeServer(...)
 			end
@@ -207,22 +202,22 @@ elseif Client then
 			local Databases = Rex:GetAllDatabases()
 			Rex:DetectChange(Databases, UpdatedData)
 			print(Databases, UpdatedData)
-			for Index, Value in Next, UpdatedData do
+			for Index, Value in next, UpdatedData do
 				CachedLibraries.Databases[Index] = Value
 			end
 		end,
 	}
 	
 	--| Unpack Services And Classes And Databases
-	for ServiceId, Functions in Next, Data.Services do
+	for ServiceId, Functions in next, Data.Services do
 		TaskHandler.NewService(ServiceId, Functions)
 	end
 	
-	for ClassId, Functions in Next, Data.Classes do
+	for ClassId, Functions in next, Data.Classes do
 		TaskHandler.NewClass(ClassId, Functions)
 	end
 	
-	for Database, Data in Next, Data.Databases do
+	for Database, Data in next, Data.Databases do
 		TaskHandler.NewDatabase(Database, Data)
 	end
 	
@@ -239,3 +234,4 @@ elseif Client then
 end
 
 return Rex
+
